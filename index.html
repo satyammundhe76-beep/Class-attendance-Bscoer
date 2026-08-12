@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="description" content="ClassAttend - smart class attendance">
+  <title>ClassAttend</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg">
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f5f7fb;color:#172033}
+    button,input{font:inherit}button{cursor:pointer}.app{min-height:100vh}.top{background:#fff;padding:18px 18px 12px;position:sticky;top:0;z-index:10;border-bottom:1px solid #e8eaf0}
+    .brand{font-size:22px;font-weight:800}.sub{font-size:13px;color:#687084;margin-top:3px}.content{max-width:720px;margin:auto;padding:18px 16px 100px}
+    .card{background:#fff;border:1px solid #e8eaf0;border-radius:18px;padding:18px;margin-bottom:14px;box-shadow:0 3px 14px rgba(20,30,60,.04)}
+    .hero{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border:0}.hero .muted{color:#e7e7ff}.big{font-size:42px;font-weight:800;margin:6px 0}.muted{color:#6b7280}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.subject{padding:15px;border:1px solid #eceef3;border-radius:14px;background:#fff}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:12px}.bar{height:8px;background:#e8eaf0;border-radius:99px;overflow:hidden;margin-top:10px}.fill{height:100%;background:#4f46e5;border-radius:99px}
+    .btn{width:100%;border:0;border-radius:13px;padding:14px 16px;font-weight:700;background:#4f46e5;color:#fff}.btn.secondary{background:#eef0ff;color:#3730a3}.btn.light{background:#fff;color:#3730a3}.btn:disabled{opacity:.5}
+    .nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e8eaf0;display:flex;justify-content:center;z-index:20}.navin{max-width:720px;width:100%;display:grid;grid-template-columns:repeat(4,1fr)}
+    .nav button{border:0;background:#fff;padding:11px 4px;color:#697083}.nav button.active{color:#4f46e5;font-weight:700}.nav span{display:block;font-size:11px;margin-top:3px}
+    .login{max-width:440px;margin:7vh auto;padding:24px}.login .logo{font-size:54px;text-align:center}.input{width:100%;padding:13px;border:1px solid #d9dce5;border-radius:12px;margin:7px 0 12px;outline:none}.input:focus{border-color:#6366f1}
+    .pill{display:inline-block;padding:6px 9px;border-radius:999px;background:#eef0ff;color:#3730a3;font-size:12px;font-weight:700}.success{color:#15803d}.danger{color:#b91c1c}
+    .modal{position:fixed;inset:0;background:rgba(10,15,30,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50}.sheet{background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:720px;padding:22px}.hidden{display:none}
+    .qr{font-family:monospace;background:#f4f4f5;padding:15px;border-radius:10px;text-align:center;font-weight:800;letter-spacing:2px}
+    @media(min-width:650px){.modal{align-items:center}.sheet{border-radius:24px;width:500px}.content{padding-bottom:40px}.nav{position:static;border-top:0;border-bottom:1px solid #e8eaf0}}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const state={role:"student",tab:"home",locationVerified:false,marked:false,session:null};
+const subjects=[
+  ["Engineering Mathematics",82],["Engineering Physics",76],["Programming",88],["Electronics",91]
+];
+
+function app(){document.getElementById("app").innerHTML=`
+<div class="app">
+  <header class="top"><div class="brand">📚 ClassAttend</div><div class="sub">${state.role==="student"?"Student Dashboard":"Teacher Dashboard"}</div></header>
+  <main class="content">${state.role==="student"?studentPage():teacherPage()}</main>
+  ${state.role==="student"?nav():''}
+</div>`}
+
+function nav(){return `<nav class="nav"><div class="navin">
+<button class="${state.tab==='home'?'active':''}" onclick="go('home')">⌂<span>Home</span></button>
+<button class="${state.tab==='subjects'?'active':''}" onclick="go('subjects')">▣<span>Subjects</span></button>
+<button class="${state.tab==='history'?'active':''}" onclick="go('history')">◷<span>History</span></button>
+<button class="${state.tab==='profile'?'active':''}" onclick="go('profile')">●<span>Profile</span></button>
+</div></nav>`}
+
+function studentPage(){
+ if(state.tab==="subjects") return `<h2>My Subjects</h2>${subjects.map(s=>subjectCard(s[0],s[1])).join("")}`;
+ if(state.tab==="history") return `<h2>Attendance History</h2>
+ <div class="card">13 Aug 2026 · <b>Engineering Mathematics</b><span class="success" style="float:right">✓ Present</span></div>
+ <div class="card">12 Aug 2026 · <b>Engineering Physics</b><span class="success" style="float:right">✓ Present</span></div>
+ <div class="card">11 Aug 2026 · <b>Electronics</b><span class="danger" style="float:right">✕ Absent</span></div>
+ <div class="card">10 Aug 2026 · <b>Programming</b><span class="success" style="float:right">✓ Present</span></div>`;
+ if(state.tab==="profile") return `<h2>Profile</h2><div class="card" style="text-align:center"><div style="font-size:60px">👤</div><h2>Satyam</h2><div class="muted">First Year ENTC · STU-001</div></div>
+ <button class="btn secondary" onclick="logout()">Log out</button>`;
+ return `<h2>Good morning 👋</h2>
+ <div class="card hero"><div class="muted">Overall Attendance</div><div class="big">84%</div><div class="bar"><div class="fill" style="width:84%;background:#fff"></div></div></div>
+ <div class="grid">${subjects.map(s=>`<div class="subject"><div class="muted">${s[0]}</div><div class="big" style="font-size:28px">${s[1]}%</div><div class="bar"><div class="fill" style="width:${s[1]}%"></div></div></div>`).join("")}</div>
+ <div class="card"><div class="row"><div><b>Today's attendance</b><div class="muted">Engineering Mathematics · Room 204</div></div><span class="pill">${state.marked?"Recorded":"Not marked"}</span></div>
+ <br><button class="btn" onclick="attendance()">📍 Mark Attendance</button></div>`;
+}
+
+function subjectCard(name,p){return `<div class="card"><div class="row"><b>${name}</b><b>${p}%</b></div><div class="bar"><div class="fill" style="width:${p}%"></div></div><p class="muted">${Math.round(p/100*25)} present · ${25-Math.round(p/100*25)} absent</p></div>`}
+
+function teacherPage(){return `<h2>Teacher Dashboard</h2>
+<div class="card"><b>Today's Classes</b><p>10:00 AM · Engineering Mathematics · Room 204</p><p>12:00 PM · Engineering Physics · Room 105</p><button class="btn" onclick="startSession()">▶ Start Attendance</button></div>
+${state.session?`<div class="card"><span class="pill">LIVE</span><h3>Attendance Session</h3><div class="qr">${state.session}</div><p class="muted">Share this temporary session code with students. In the production version, use a rotating QR generated by the server.</p><button class="btn secondary" onclick="stopSession()">Stop Session</button></div>`:''}
+<div class="grid"><div class="subject"><b>54</b><div class="muted">Present</div></div><div class="subject"><b>8</b><div class="muted">Absent</div></div></div>`}
+
+function go(t){state.tab=t;app()}
+function attendance(){
+ showModal(`<h2>📍 Mark Attendance</h2><p><b>Engineering Mathematics</b><br>Room 204</p>
+ <p class="muted">Your browser will ask for location permission. Location is checked only during this attendance action.</p>
+ <button class="btn" onclick="verifyLocation()">Verify My Location</button><div id="locmsg" style="margin-top:14px"></div>`);
+}
+function verifyLocation(){
+ const el=document.getElementById("locmsg");el.textContent="Checking location…";
+ if(!navigator.geolocation){el.textContent="Location is not supported by this browser.";return}
+ navigator.geolocation.getCurrentPosition(pos=>{
+   state.locationVerified=true;
+   el.innerHTML='<span class="success">✓ Location received. Prototype verification passed.</span><br><br><button class="btn" onclick="mark()">Mark Attendance</button>';
+ },err=>{el.innerHTML='<span class="danger">Location permission was not granted. Please allow location access and try again.</span>'},{enableHighAccuracy:true,timeout:10000});
+}
+function mark(){state.marked=true;closeModal();showModal(`<div style="text-align:center"><div style="font-size:60px">✓</div><h2>Attendance Recorded</h2><p>Engineering Mathematics</p><p class="success">Location verified</p><button class="btn" onclick="closeModal();app()">Done</button></div>`)}
+function startSession(){state.session="ATT-"+Math.floor(100000+Math.random()*900000);app()}
+function stopSession(){state.session=null;app()}
+function showModal(html){const d=document.createElement("div");d.id="modal";d.className="modal";d.innerHTML=`<div class="sheet">${html}<br><button class="btn secondary" onclick="closeModal()">Cancel</button></div>`;document.body.appendChild(d)}
+function closeModal(){document.getElementById("modal")?.remove()}
+function logout(){location.reload()}
+
+function login(){document.getElementById("app").innerHTML=`<div class="login">
+<div class="logo">📚</div><h1 style="text-align:center">ClassAttend</h1><p class="muted" style="text-align:center">Smart attendance for students and teachers</p>
+<label>Role</label><select id="role" class="input"><option value="student">Student</option><option value="teacher">Teacher</option></select>
+<label>ID</label><input class="input" placeholder="Student/Teacher ID">
+<label>Password</label><input class="input" type="password" placeholder="Password">
+<button class="btn" onclick="enter()">Login</button><p class="muted" style="text-align:center;font-size:12px">Prototype login: any ID/password works.</p></div>`}
+function enter(){state.role=document.getElementById("role").value;state.tab="home";app()}
+login();
+
+if('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
